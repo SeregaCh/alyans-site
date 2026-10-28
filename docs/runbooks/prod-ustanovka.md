@@ -21,6 +21,10 @@ npm -v
 id alyans-deploy
 systemctl list-timers --all | grep -i alyans
 namei -l /var/www/alyans/prod
+command -v node npm
+sudo -u www-data env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin node -v
+sudo certbot certificates
+getent hosts www.alyans-em.ru
 ```
 
 **Ожидается:**
@@ -29,7 +33,11 @@ namei -l /var/www/alyans/prod
 - `node -v` — `v20.x`;
 - `id alyans-deploy` — `no such user`;
 - таймеров alyans нет;
-- `namei -l`: у каждого каталога пути есть `x` для «прочих» или для группы `www-data` — www-data проходит до `prod`.
+- `namei -l`: у каждого каталога пути есть `x` для «прочих» или для группы `www-data` — www-data проходит до `prod`;
+- `command -v node npm` — оба пути не из `/root`;
+- `node -v` от `www-data` с системным `PATH` печатает версию — node доступен не только из профиля root;
+- `certbot certificates` — у сертификата alyans-em.ru оба домена: `alyans-em.ru` и `www.alyans-em.ru`;
+- `getent hosts www.alyans-em.ru` — `45.90.32.35`.
 
 Иначе — стоп, ничего не менять, вывод — в чат.
 
@@ -242,6 +250,26 @@ journalctl -u alyans-release -n 20 --no-pager
 С этого момента выкладка — слияние PR main → prod в GitHub; через 2–4 минуты новый коммит на сайте. Журнал: `journalctl -u alyans-release`.
 
 **Откат:** `sudo systemctl disable --now alyans-release.timer`.
+
+---
+
+## Выкладка застряла на failed-sha
+
+**Где:** 45.90.32.35. Упавший хеш таймер больше не собирает — ждёт новый коммит в `prod`. Если провал был случайным (сеть, реестр npm), тот же хеш можно выложить повторно.
+
+**Как увидеть:**
+```
+journalctl -u alyans-release -n 30 --no-pager
+```
+В журнале на каждом запуске — строка `alyans-release: <хеш> уже проваливался — ждём новый коммит в prod`; выше по журналу — причина провала (строки `ОШИБКА`).
+
+**Повтор того же хеша** — убедиться, что причина случайная, затем:
+```
+sudo -u alyans-deploy -H rm /var/lib/alyans-deploy/state/failed-sha
+```
+Следующий запуск таймера (до 2 минут) соберёт хеш заново; итог — в `journalctl -u alyans-release`.
+
+Если причина в самом коммите — `failed-sha` не трогать: исправление идёт через `main` → PR → `prod`.
 
 ---
 
