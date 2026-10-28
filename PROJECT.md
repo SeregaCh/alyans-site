@@ -41,7 +41,7 @@
 - VPS, IP — 45.90.32.35. Прежний сосед EasyPlan снят 2026-10-14 (см. ниже).
 - Ubuntu 24.04.4 LTS, ядро 6.8. 2 ядра, 4 ГБ памяти, 40 ГБ диска; свободно 31 ГБ (после перезагрузки сервера, на 2026-09-14).
 - Каталоги проекта: `/var/www/alyans/prod` (релизы production, см. «Окружения») и `/var/www/alyans/staging` (рабочая копия git staging; раздаётся подкаталог сборки).
-- До переезда разработки здесь работала сессия tmux `alyans` в `/var/www/alyans/staging`; для разработки машина больше не используется. Сессия `work` осталась от EasyPlan и к этому проекту отношения не имеет.
+- Старой разработки и Claude Code здесь нет: сессия `alyans`, `/root/.claude`, бинарник Claude, Playwright-кэш, `prod-dist` и ключ `alyans-write` сняты 2026-10-28 (`log/2026-10-28-pervyy-vypusk-q7.md`).
 
 ### Соседи по машине
 
@@ -54,7 +54,7 @@
 
 ### Окружения
 
-- **production** — https://alyans-em.ru. Выпуск — слияние PR main → prod в GitHub (ruleset: только PR, проверка `build`). На сервере таймер `alyans-release` (раз в 2 минуты) от пользователя `alyans-deploy` собирает новый `prod` в `/var/www/alyans/prod/releases/<sha>` и переключает симлинк `/var/www/alyans/prod/current`; nginx раздаёт `current`. Выпущенный хеш — `https://alyans-em.ru/version.txt`. Хранятся 5 последних релизов; откат — `rollback.sh`. Установка и откат — `docs/runbooks/`. Секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
+- **production** — https://alyans-em.ru. Выпуск — слияние PR main → prod в GitHub (ruleset: только PR, проверка `build`). На сервере таймер `alyans-release` (раз в 2 минуты) от пользователя `alyans-deploy` собирает новый `prod` в `/var/www/alyans/prod/releases/<sha>` и переключает симлинк `/var/www/alyans/prod/current`; nginx раздаёт `current`. Выпущенный хеш — `https://alyans-em.ru/version.txt`. Хранятся 5 последних релизов; откат — `rollback.sh`. Сборка — на Node 22.23.4 из `/opt/node22`, только для службы выкладки (`PATH` в юните); системный Node 20 не используется. Установка и откат — `docs/runbooks/`. Секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
 - **staging** — `dev.alyans-em.ru`: рабочая копия `/var/www/alyans/staging`, закрыт от индексации.
 - Оба — статика через nginx, своим vhost и своим сертификатом Let's Encrypt.
 
