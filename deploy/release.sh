@@ -2,6 +2,8 @@
 # Выкладка alyans-em.ru с ветки prod. Запуск — от alyans-deploy (таймер alyans-release).
 # Флаг --no-verify — только для первого релиза: пропускает проверку version.txt по https.
 set -euo pipefail
+# Не зависеть от каталога запуска: из /root под sudo -u find падает на возврате в исходный каталог.
+cd /
 umask 027
 
 HOME_DIR=/var/lib/alyans-deploy
