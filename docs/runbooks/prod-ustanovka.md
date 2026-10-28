@@ -179,7 +179,7 @@ sudo rm -f /var/lib/alyans-deploy/state/current-sha /var/lib/alyans-deploy/state
 
 ## Шаг 8. Nginx: root на current
 
-**Где:** 45.90.32.35. Общий nginx с EasyPlan — только `nginx -t` и `reload`, никогда `restart`.
+**Где:** 45.90.32.35. Nginx общий с заглушкой `easy-plan.ru` и наблюдателем Пульта `watch.serega-hub.ru` — только `nginx -t` и `reload`, никогда `restart`.
 
 Сначала — ответ dev до правки, чтобы сравнить после:
 ```

@@ -6,26 +6,25 @@
 
 Зачем Node 22: `undici@8.10.2` (зависимость `astro` через `unifont`) требует Node ≥ 22.19.0; на системном Node 20 `npm ci` печатает `EBADENGINE`. Версия — **22.23.4**, актуальный LTS ветки 22 (Jod) на 2026-10-28.
 
+EasyPlan снят 2026-10-14: на машине от него только статическая заглушка nginx `easy-plan.ru` («Site closed.»), процессов PM2 нет, системный `/usr/bin/node` никто не обслуживает.
+
 ---
 
-## Шаг А. Node 22 для выкладки
+## Шаг А. Node 22 для выкладки в /opt
 
-Системный Node на 45.90.32.35 общий с EasyPlan: его PM2-процесс работает на `/usr/bin/node`. Поэтому два варианта; **выбран А1**, А2 описан на случай, если EasyPlan сам переходит на 22.
+Node 22 ставится отдельным каталогом и виден только службе `alyans-release` — через `Environment=PATH=/opt/node22/bin:…` в её юните (юнит обновляется на шаге Б). Системный `/usr/bin/node` не меняется.
 
-Перед любым вариантом — снимок, чтобы сравнить после:
+**Где:** 45.90.32.35.
+
+Снимок до:
 ```
 cd /
 /usr/bin/node -v
 sudo pm2 list
 ```
-**Ожидается:** `v20.x`; в `pm2 list` — `easy-plan` в статусе `online`, запомнить его `uptime` и `↺` (число рестартов). Если `pm2 list` пуст — EasyPlan запущен под другим пользователем: стоп, вопрос архитектору Пульта.
+**Ожидается:** `v20.x`; `sudo pm2 list` — процессов нет (EasyPlan снят 2026-10-14). Если процесс есть — стоп, вывод Ревизору.
 
-### А1 (рекомендуемый): Node 22 только для выкладки, в /opt
-
-`/usr/bin/node` и EasyPlan не трогаются. Node 22 видит только служба `alyans-release` — через `Environment=PATH=/opt/node22/bin:…` в её юните (юнит обновляется на шаге Б).
-
-**Где:** 45.90.32.35.
-
+Установка:
 ```
 cd /tmp
 curl -fsSLO https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.xz
@@ -45,62 +44,28 @@ sudo -u alyans-deploy -H env -i PATH=/opt/node22/bin:/usr/local/sbin:/usr/local/
 /usr/bin/node -v
 command -v node
 sudo pm2 list
+curl -sS -o /dev/null -w '%{http_code}\n' https://easy-plan.ru/
 ```
 **Ожидается:**
 - `sha256sum -c` — `node-v22.23.4-linux-x64.tar.xz: OK`;
 - от `alyans-deploy` с этим PATH — `v22.23.4`, `npm -v` печатает версию;
 - `/usr/bin/node -v` — тот же `v20.x`, что в снимке;
 - `command -v node` — `/usr/bin/node` (системный PATH не изменился);
-- `pm2 list` — `easy-plan` `online`, `uptime` не сброшен, `↺` тот же.
+- `sudo pm2 list` — процессов нет; если процесс есть — стоп, вывод Ревизору;
+- `easy-plan.ru` — `200` (заглушка).
 
 **Откат:**
 ```
 sudo rm /opt/node22
 sudo rm -r /opt/node-v22.23.4-linux-x64
 ```
-Если шаг Б уже выполнен — сначала откат шага Б (юнит ссылается на `/opt/node22`; без каталога PATH просто проваливается на `/usr/bin`, но делать так намеренно не надо).
-
-### А2: системно через NodeSource 22.x — только с подтверждением
-
-**Обязательное условие до начала:** совместимость EasyPlan с Node 22 подтверждает архитектор Пульта. Без подтверждения — не выполнять.
-
-**Где:** 45.90.32.35.
-
-```
-cd /tmp
-curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup_22.sh
-less nodesource_setup_22.sh
-sudo bash nodesource_setup_22.sh
-sudo apt-get install -y nodejs
-/usr/bin/node -v
-sudo pm2 list
-sudo pm2 restart all
-sleep 5
-sudo pm2 list
-curl -sS -o /dev/null -w '%{http_code}\n' https://easy-plan.ru/
-cd /
-```
-`pm2 restart all` — только если в `pm2 list` один процесс, `easy-plan`; если процессов больше — стоп, вопрос архитектору Пульта.
-
-**Ожидается:** `/usr/bin/node -v` — `v22.x`; после рестарта `easy-plan` `online`; `easy-plan.ru` — `200`.
-
-**Откат:**
-```
-cd /tmp
-curl -fsSL https://deb.nodesource.com/setup_20.x -o nodesource_setup_20.sh
-sudo bash nodesource_setup_20.sh
-sudo apt-get install -y --allow-downgrades nodejs="$(apt-cache madison nodejs | awk '$3 ~ /^20\./ {print $3; exit}')"
-/usr/bin/node -v
-sudo pm2 restart all
-curl -sS -o /dev/null -w '%{http_code}\n' https://easy-plan.ru/
-cd /
-```
+Если шаг Б уже выполнен — сначала откат шага Б.
 
 ---
 
 ## Шаг Б. Переустановка скриптов и юнитов
 
-**Где:** 45.90.32.35. `<SHA>` — хеш коммита в `main` с этим runbook, его называет отчёт Claude Code. Единственный плейсхолдер в runbook.
+**Где:** 45.90.32.35. `<SHA>` — хеш коммита в `main` с финальными `deploy/` и юнитом с PATH на `/opt/node22`, его называет отчёт Claude Code. Единственный плейсхолдер в runbook.
 
 ```
 cd /
@@ -149,6 +114,8 @@ sudo systemctl daemon-reload
 
 **Не трогать staging:** `dev.alyans-em.ru`, `/var/www/alyans/staging-dist`, `/var/www/alyans/staging`, vhost `alyans-dev` — они уходят только с переездом staging. Около 70 системных пакетов, поставленных Playwright, тоже не трогать.
 
+Claude Code под root снимается целиком: EasyPlan его больше не использует.
+
 ### В.1. Проверка перед снятием — только чтение
 
 **Где:** 45.90.32.35.
@@ -158,8 +125,7 @@ cd /
 sudo ls -la /root/.claude /root/.local/share/claude /root/.local/bin/claude /root/.cache/ms-playwright /var/www/alyans/prod-dist
 sudo sh -c 'ls -la /root/.ssh/id_ed25519_alyans-write*'
 sudo tmux ls
-sudo tmux list-panes -a -F '#{session_name} #{pane_pid} #{pane_current_command}'
-ps -eo user,pid,etime,cmd | grep -i '[c]laude'
+pgrep -a -u root claude
 sudo ss -tlnp | grep 4321
 grep -rn prod-dist /etc/nginx/sites-enabled/
 sudo grep -rn alyans-write /root/.ssh/config
@@ -167,21 +133,32 @@ sudo grep -rn alyans-write /root/.ssh/config
 
 **Ожидается:**
 - перечисленные пути существуют (какого-то нет — уже снят, просто пропустить его в В.3);
+- `sudo tmux ls` — сессии root; **если среди них есть что-то кроме `alyans` и `work` — стоп, вывод Ревизору**;
+- `pgrep -a -u root claude` — процессы Claude Code под root (вывод сохранить для В.2);
 - `grep prod-dist` по `sites-enabled` — пусто: nginx раздаёт `/var/www/alyans/prod/current`;
-- `grep alyans-write` по `/root/.ssh/config` — пусто (или файла нет);
-- **Claude Code работает только в сессии `alyans`.** Если `claude` виден в сессии `work` (EasyPlan) или вне tmux — стоп: `/root/.claude`, `/root/.local/share/claude` и `/root/.local/bin/claude` общие для всех сессий root, их удаление выбьет и чужую. Вопрос архитектору Пульта.
+- `grep alyans-write` по `/root/.ssh/config` — пусто (или файла нет).
+
+Вывод `tmux ls` и `pgrep` — Ревизору: он называет сессии, которые остаются (если такие есть). Без его ответа к В.2 не переходить.
 
 **Откат:** не нужен, шаг ничего не меняет.
 
-### В.2. Остановка старой сессии
+### В.2. Остановка Claude Code и сессий root
 
+Завершаются все процессы `claude` под root и все tmux-сессии root, кроме названных Ревизором по выводу В.1. Если Ревизор не назвал ни одной — все сессии:
 ```
-sudo pkill -f 'astro preview' || echo "preview не запущен"
-sudo tmux kill-session -t alyans || echo "сессии alyans нет"
+sudo pkill -u root -f 'astro preview' || echo "preview не запущен"
+sudo pkill -u root claude || echo "claude не запущен"
+sudo tmux kill-server || echo "tmux root не запущен"
+```
+Если Ревизор назвал сессии, которые остаются, — вместо `kill-server` по одной строке на каждую уходящую сессию из вывода `tmux ls`: `sudo tmux kill-session -t alyans`, `sudo tmux kill-session -t work`.
+
+Проверка:
+```
+pgrep -a -u root claude || echo "claude нет"
+sudo tmux ls || echo "сессий root нет"
 sudo ss -tlnp | grep 4321 || echo "4321 свободен"
-sudo tmux ls
 ```
-**Ожидается:** `4321 свободен`; в `tmux ls` нет `alyans`, сессия `work` на месте.
+**Ожидается:** `claude нет`; в `tmux ls` — только сессии, названные Ревизором (или `сессий root нет`); `4321 свободен`.
 
 **Откат:** не требуется — разработка на этой машине больше не ведётся.
 
@@ -208,4 +185,4 @@ curl -sS -o /dev/null -w '%{http_code}\n' https://dev.alyans-em.ru/
 curl -sS -o /dev/null -w '%{http_code}\n' https://watch.serega-hub.ru/
 sudo pm2 list
 ```
-**Ожидается:** `version.txt` равен `current-sha` (текущий prod); `easy-plan.ru` — `200`; `dev.alyans-em.ru` — `200`; `watch.serega-hub.ru` — `401`; `easy-plan` `online`.
+**Ожидается:** `version.txt` равен `current-sha` (текущий prod); `easy-plan.ru` — `200` (заглушка); `dev.alyans-em.ru` — `200`; `watch.serega-hub.ru` — `401`; `sudo pm2 list` — процессов нет (если процесс есть — стоп, вывод Ревизору).

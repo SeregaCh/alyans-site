@@ -12,9 +12,12 @@
 - PR #1 main → prod слит 2026-10-28; первый выпущенный коммит `prod` — merge-коммит `5eeec73`. Ожидание runbook «первый релиз — `823f7bd…`» не сбылось: PR слит до шага 7, это не ошибка.
 - Проверка ruleset до выпуска: прямой push в `prod` отклонён `GH013` («Changes must be made through a pull request»).
 
-## Шаги runbook
+## Шаги
+
+Шаги 1 и 10 — шаги плана архитектора, не команды runbook; остальные — разделы `docs/runbooks/prod-ustanovka.md`.
 
 0. Разведка, только чтение — каталоги, vhost, Node, пользователь, таймеры, `namei`, сертификат и A-запись `www`.
+1. Файлы `deploy/` в репозитории — скрипты `release.sh`, `rollback.sh`, юниты systemd, runbook (план архитектора).
 2. Пользователь `alyans-deploy`, каталоги `prod` и `prod/releases` (`alyans-deploy:www-data`, 2750), `state/`.
 3. Ключ только для чтения `id_ed25519_alyans-site-ro`, добавлен в GitHub без права записи.
 4. `known_hosts` из опубликованной строки GitHub, отпечаток сверен; `ssh-keyscan` не использовался.
@@ -23,8 +26,7 @@
 7. Первый релиз вручную с `--no-verify` — инцидент 1.
 8. Nginx: `root` на `/var/www/alyans/prod/current`, `nginx -t`, `reload` — инцидент 2; проверки по списку runbook.
 9. Таймер `alyans-release.timer` включён.
-
-Нумерацию 0–10 Ревизора с runbook не сверял: в runbook шага 1 нет, шаг 10 не описан.
+10. Первый выпуск: PR #1 main → prod слит, таймер выложил `5eeec73` (план архитектора).
 
 ## Инциденты
 
@@ -33,7 +35,7 @@
 
 ## EBADENGINE undici
 
-На проде Node 20, а `undici@8.10.2` (`astro` → `unifont` → `undici`) требует Node ≥ 22.19.0 — `npm ci` печатает `EBADENGINE`. Сборка проходит, но это предупреждение о неподдерживаемой среде. Решение — Node 22.23.4 только для выкладки в `/opt/node22` (`docs/runbooks/prod-node22-i-uborka.md`, вариант А1), системный Node 20 EasyPlan не трогается; `build` в Actions переведён на Node 22.
+На проде Node 20, а `undici@8.10.2` (`astro` → `unifont` → `undici`) требует Node ≥ 22.19.0 — `npm ci` печатает `EBADENGINE`. Сборка проходит, но это предупреждение о неподдерживаемой среде. Решение — Node 22.23.4 только для выкладки в `/opt/node22` (`docs/runbooks/prod-node22-i-uborka.md`, вариант А1), системный Node 20 не трогается; `build` в Actions переведён на Node 22.
 
 ## Итог
 
