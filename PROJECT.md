@@ -38,35 +38,34 @@
 
 ### Сервер
 
-- VPS общий с проектом EasyPlan. IP — 45.90.32.35.
+- VPS, IP — 45.90.32.35. Прежний сосед EasyPlan снят 2026-10-14 (см. ниже).
 - Ubuntu 24.04.4 LTS, ядро 6.8. 2 ядра, 4 ГБ памяти, 40 ГБ диска; свободно 31 ГБ (после перезагрузки сервера, на 2026-09-14).
-- Каталоги проекта: `/var/www/alyans/prod` и `/var/www/alyans/staging` (рабочие копии git; раздаётся подкаталог сборки).
-- До переезда разработки здесь работала сессия tmux `alyans` в `/var/www/alyans/staging`; для разработки машина больше не используется. Сессия `work` принадлежит EasyPlan и к этому проекту отношения не имеет.
+- Каталоги проекта: `/var/www/alyans/prod` (релизы production, см. «Окружения») и `/var/www/alyans/staging` (рабочая копия git staging; раздаётся подкаталог сборки).
+- До переезда разработки здесь работала сессия tmux `alyans` в `/var/www/alyans/staging`; для разработки машина больше не используется. Сессия `work` осталась от EasyPlan и к этому проекту отношения не имеет.
 
-### Соседство с EasyPlan (общая машина)
+### Соседи по машине
 
-На машине работает чужой живой проект. Общие ресурсы: nginx, certbot, порты 80 и 443, пользователь www-data.
-
-- EasyPlan: домены `easy-plan.ru`, `www.easy-plan.ru`; каталог `/var/www/easy-plan`; API на `127.0.0.1:3000`; процесс под PM2.
-- **`default_server` явно ни за кем не закреплён** — vhost EasyPlan первый и ловит незаданные хосты. Отсюда порядок развёртывания: A-запись → сразу vhost с явным `server_name` → certbot. Домен не оставляется без своего vhost.
-- Правки nginx — только своим файлом в `sites-available`; чужой конфиг не читается на правку и не изменяется. Перезагрузка nginx затрагивает EasyPlan: сначала `nginx -t`, затем `reload`, никогда `restart`.
-- Статике не нужны порт, рантайм и процесс-менеджер: nginx отдаёт каталог файлов. Пересечений по процессам и портам нет.
-- Выпуск сертификата certbot — рисковая команда. Откат nginx: восстановить прежний файл vhost, `nginx -t`, `reload`, проверить, что EasyPlan отвечает.
+- **EasyPlan снят 2026-10-14.** От него — статическая заглушка nginx `easy-plan.ru` (`/var/www/easy-plan-stub`, ответ «Site closed.»); процессов PM2 нет, системный `/usr/bin/node` никто не обслуживает.
+- **Наблюдатель Пульта** `watch.serega-hub.ru` — на этой же машине, за общим nginx. После любого `reload` nginx — проверка: `watch.serega-hub.ru` отвечает `401`.
+- Общие ресурсы: nginx, certbot, порты 80 и 443, пользователь www-data. Правки nginx — только своим файлом в `sites-available`; чужие vhost не читаются на правку и не изменяются. Сначала `nginx -t`, затем `reload`, никогда `restart`.
+- **`default_server` явно ни за кем не закреплён.** Отсюда порядок развёртывания нового домена: A-запись → сразу vhost с явным `server_name` → certbot. Домен не оставляется без своего vhost.
+- Выпуск сертификата certbot — рисковая команда. Откат nginx: восстановить прежний файл vhost, `nginx -t`, `reload`, проверить `easy-plan.ru` → `200` (заглушка) и `watch.serega-hub.ru` → `401`.
+- Статике не нужны порт, рантайм и процесс-менеджер: nginx отдаёт каталог файлов.
 
 ### Окружения
 
-- **production** — https://alyans-em.ru: рабочая копия `/var/www/alyans/prod`, раздача из `/var/www/alyans/prod-dist`, деплой командой `deploy:production`, секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
+- **production** — https://alyans-em.ru. Выпуск — слияние PR main → prod в GitHub (ruleset: только PR, проверка `build`). На сервере таймер `alyans-release` (раз в 2 минуты) от пользователя `alyans-deploy` собирает новый `prod` в `/var/www/alyans/prod/releases/<sha>` и переключает симлинк `/var/www/alyans/prod/current`; nginx раздаёт `current`. Выпущенный хеш — `https://alyans-em.ru/version.txt`. Хранятся 5 последних релизов; откат — `rollback.sh`. Установка и откат — `docs/runbooks/`. Секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
 - **staging** — `dev.alyans-em.ru`: рабочая копия `/var/www/alyans/staging`, закрыт от индексации.
 - Оба — статика через nginx, своим vhost и своим сертификатом Let's Encrypt.
 
 ### Веб и деплой
 
 - Nginx 1.24 (Ubuntu), certbot 2.9.0 из apt с плагином nginx, автообновление таймером `certbot.timer`.
-- Деплой: `git pull` → `npm ci` → сборка Astro → готовый каталог раздаётся nginx. Рестарта процессов нет — обновляются файлы.
+- Staging: `git pull` → `npm ci` → сборка Astro → готовый каталог раздаётся nginx. Рестарта процессов нет — обновляются файлы. Production — см. «Окружения».
 - Команды окружений (в `package.json`): `build:staging` собирает с `SITE_ENV=staging` (индексация закрыта, домен `dev.alyans-em.ru`); `build:production` — с `SITE_ENV=production` (домен `alyans-em.ru`, `robots.txt` открыт); `deploy:staging` собирает `build:staging` и синхронизирует `dist/` в `/var/www/alyans/staging-dist/` (корень vhost `alyans-dev`).
 - **Деплой на dev — только командой `deploy:staging`.** Вручную `rsync` не запускается: команда уже включает нужную сборку и правильный `SITE_ENV`, ручной вызов рискует раздать staging-сборку с production-конфигурацией или наоборот.
-- Promote → production: тот же проверенный коммит, что прошёл проверку на `dev.alyans-em.ru`.
-- Порядок обновления staging и прода после переезда разработки — открытый долг, см. `ROADMAP.md`.
+- Promote → production: слияние PR main → prod; таймер выкладывает его сам.
+- Порядок обновления staging после переезда разработки — открытый долг, см. `ROADMAP.md`.
 
 ## Домен и DNS
 

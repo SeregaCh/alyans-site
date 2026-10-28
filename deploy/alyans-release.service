@@ -8,6 +8,8 @@ Type=oneshot
 TimeoutStartSec=20min
 User=alyans-deploy
 Group=alyans-deploy
+# Node 22 только для выкладки; системный /usr/bin/node (Node 20) не трогается.
+Environment=PATH=/opt/node22/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/usr/local/lib/alyans-deploy/release.sh
 NoNewPrivileges=yes
 PrivateTmp=yes

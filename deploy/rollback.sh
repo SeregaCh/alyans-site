@@ -3,6 +3,7 @@
 # Без аргумента — на релиз, предшествующий текущему по времени; с аргументом — на указанный sha.
 # current-sha не меняется: таймер увидит, что prod не изменился, и откат не перезапишет.
 set -euo pipefail
+cd /
 
 PROD=/var/www/alyans/prod
 RELEASES=$PROD/releases

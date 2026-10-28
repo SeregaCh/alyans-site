@@ -151,9 +151,10 @@ sudo systemctl daemon-reload
 
 ## Шаг 7. Первый релиз вручную, с --no-verify
 
-**Где:** 45.90.32.35. Запуск напрямую от `alyans-deploy`, не через service. Проверка по https здесь невозможна: nginx ещё смотрит в `prod-dist`. Поэтому `--no-verify`, а скрипт принимает его только при пустом `releases/` и без `current`. Вывод на экране — журнал этого прогона.
+**Где:** 45.90.32.35, из каталога `/` (из `/root` под `sudo -u` скрипт до правки падал на `find`). Запуск напрямую от `alyans-deploy`, не через service. Проверка по https здесь невозможна: nginx ещё смотрит в `prod-dist`. Поэтому `--no-verify`, а скрипт принимает его только при пустом `releases/` и без `current`. Вывод на экране — журнал этого прогона.
 
 ```
+cd /
 sudo -u alyans-deploy -H /usr/local/lib/alyans-deploy/release.sh --no-verify; echo "exit=$?"
 sudo ls -l /var/www/alyans/prod /var/www/alyans/prod/releases
 sudo cat /var/lib/alyans-deploy/state/current-sha
@@ -178,7 +179,7 @@ sudo rm -f /var/lib/alyans-deploy/state/current-sha /var/lib/alyans-deploy/state
 
 ## Шаг 8. Nginx: root на current
 
-**Где:** 45.90.32.35. Общий nginx с EasyPlan — только `nginx -t` и `reload`, никогда `restart`.
+**Где:** 45.90.32.35. Nginx общий с заглушкой `easy-plan.ru` и наблюдателем Пульта `watch.serega-hub.ru` — только `nginx -t` и `reload`, никогда `restart`.
 
 Сначала — ответ dev до правки, чтобы сравнить после:
 ```
@@ -201,9 +202,10 @@ sudo grep -cxE '\s*root /var/www/alyans/prod/current;' /etc/nginx/sites-availabl
 ```
 **Ожидается:** `0` и `1`.
 
-Применение:
+Применение (пауза — reload применяется не мгновенно; без неё первая проверка 28.10 дала 404):
 ```
 sudo nginx -t && sudo systemctl reload nginx
+sleep 2
 ```
 
 Проверки:
