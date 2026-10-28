@@ -11,7 +11,7 @@ jobs:
   # Имя `build` — обязательная проверка в ruleset ветки prod; не переименовывать.
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,7 +27,7 @@ jobs:
   open-pr:
     name: open-pr
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       # contents: read — для сравнения веток через API; права задачи заменяют права workflow.
       contents: read
