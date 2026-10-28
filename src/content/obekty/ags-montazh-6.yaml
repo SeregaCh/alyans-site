@@ -1,0 +1,15 @@
+naimenovanie: Монтаж наземных станций AGS 2300V в 6 аэропортах
+zakazchik:
+  - АО «Азимут»
+god: "2026"
+godSortirovki: 2026
+poryadok: 3
+vSostaveGruppyKompaniy: false
+napravlenie: aeronavigatsiya
+sostav:
+  - Саратов («Гагарин»)
+  - Махачкала («Уйташ»)
+  - Хабаровск
+  - Южно-Сахалинск
+  - Петропавловск-Камчатский
+  - Якутск (им. П. Ойунского)

@@ -1,0 +1,15 @@
+naimenovanie: "Санитарно-эпидемиологические заключения на проекты размещения наземных станций AGS 2300V в 6 аэропортах"
+zakazchik:
+  - АО «Инфоком-Авиа»
+god: "2025"
+godSortirovki: 2025
+poryadok: 11
+vSostaveGruppyKompaniy: false
+napravlenie: aeronavigatsiya
+sostav:
+  - Оренбург
+  - Волгоград
+  - Минеральные Воды
+  - Саратов («Гагарин»)
+  - Махачкала («Уйташ»)
+  - Нижний Новгород

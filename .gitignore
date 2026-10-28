@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.astro/
+.output/
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# Локальные разрешения сессии Claude Code — привязаны к этой машине/истории,
+# не переносимы между сессиями и людьми.
+.claude/settings.local.json

@@ -1,0 +1,11 @@
+naimenovanie: Подготовка площадок под оборудование РМС
+zakazchik:
+  - АО ПК «Азимут»
+god: "2025–2026"
+godSortirovki: 2026
+poryadok: 7
+vSostaveGruppyKompaniy: false
+napravlenie: aeronavigatsiya
+sostav:
+  - аэродром Сочи (Адлер)
+  - аэропорт Анапа

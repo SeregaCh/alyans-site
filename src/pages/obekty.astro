@@ -1,0 +1,90 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const obekty = await getCollection('obekty');
+const napravleniya = await getCollection('napravleniya');
+const napravlenieNazvanie = new Map(napravleniya.map((n) => [n.id, n.data.nazvanie]));
+
+const sorted = [...obekty].sort((a, b) => a.data.poryadok - b.data.poryadok);
+---
+
+<BaseLayout
+  title="Объекты — ООО «Альянс»"
+  description="Перечень выполненных работ ООО «Альянс»: объект, заказчик, год, направление."
+>
+  <div class="container section">
+    <h1 class="h1-inner">Выполненные объекты</h1>
+
+    <table class="data-table obekty-table" style="margin-top: 20px;">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 46%">Объект</th>
+          <th scope="col" style="width: 26%">Заказчик</th>
+          <th scope="col" style="width: 16%">Направление</th>
+          <th scope="col" style="width: 12%">Год</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          sorted.map((o) => (
+            <tr>
+              <td data-label="Объект" class="col-naimenovanie">
+                {o.data.naimenovanie}
+                {o.data.vSostaveGruppyKompaniy && (
+                  <div class="caption" style="color: var(--ink-3); margin-top: 4px;">
+                    в составе группы компаний
+                  </div>
+                )}
+                {o.data.sostav && (
+                  <div class="sostav-list">
+                    <span class="sostav-items">
+                      {o.data.sostav.map((mesto) => (
+                        <span class="sostav-item">{mesto}</span>
+                      ))}
+                    </span>
+                    <span class="sostav-count">({o.data.sostav.length} аэропортов)</span>
+                  </div>
+                )}
+              </td>
+              <td data-label="Заказчик">
+                {o.data.zakazchik.map((z) => (
+                  <div>{z}</div>
+                ))}
+              </td>
+              <td data-label="Направление">{napravlenieNazvanie.get(o.data.napravlenie)}</td>
+              <td data-label="Год" class="col-god">{o.data.god}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</BaseLayout>
+
+<style>
+  .sostav-list {
+    margin-top: 8px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: baseline;
+  }
+
+  .sostav-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .sostav-item:not(:last-child)::after {
+    content: ' ·';
+  }
+
+  .sostav-count {
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+</style>

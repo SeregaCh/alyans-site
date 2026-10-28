@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const LINKS = [
+  { href: '/', label: 'Главная' },
+  { href: '/napravleniya/', label: 'Направления' },
+  { href: '/obekty/', label: 'Объекты' },
+  { href: '/dopuski/', label: 'Допуски' },
+  { href: '/kontakty/', label: 'Контакты' },
+];
+---
+
+<BaseLayout title="Страница не найдена — ООО «Альянс»" description="Запрошенный адрес не существует или изменился.">
+  <div class="container not-found">
+    <p class="mono not-found__code">404</p>
+    <h1 class="h1-inner">Страница не найдена</h1>
+    <p class="lead" style="margin-top: 10px;">Адрес не существует или изменился.</p>
+    <p style="margin-top: 20px;">
+      {
+        LINKS.map((link, i) => (
+          <>
+            {i > 0 && ' · '}
+            <a href={link.href} class="text-link">{link.label}</a>
+          </>
+        ))
+      }
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .not-found__code {
+    font-size: 72px;
+    color: var(--ink-3);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,73 @@
+---
+import { getCollection } from 'astro:content';
+import { NAPRAVLENIYA_IDS } from '../content/shared';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const all = await getCollection('napravleniya');
+const byId = new Map(all.map((n) => [n.id, n]));
+const sorted = NAPRAVLENIYA_IDS.map((id) => byId.get(id)).filter(Boolean) as typeof all;
+---
+
+<BaseLayout
+  title="Направления работ — ООО «Альянс»"
+  description="Четыре направления работ ООО «Альянс»: инженерные сети, объекты аэронавигации, антикоррозионные и огнезащитные покрытия, монолитные работы."
+>
+  <div class="container section">
+    <h1 class="h1-inner">Направления работ</h1>
+    <p class="lead" style="margin-top: 12px;">
+      Четыре направления на промышленных и гражданских объектах и на объектах
+      аэронавигации.
+    </p>
+
+    <ol class="napravleniya-list">
+      {
+        sorted.map((n, index) => (
+          <li>
+            <span class="napravlenie-nomer mono">{String(index + 1).padStart(2, '0')}</span>
+            <h3>{n.data.nazvanie}</h3>
+            <p style="color: var(--ink-2); margin-top: 6px;">{n.data.opisanie}</p>
+            <ul class="rabotyi-list">
+              {n.data.rabotyi.map((r) => (
+                <li>{r}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</BaseLayout>
+
+<style>
+  .napravleniya-list {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+  }
+
+  .napravleniya-list > li {
+    padding: 20px 0;
+    border-top: 1px solid var(--line-2);
+  }
+
+  .napravleniya-list > li:first-child {
+    border-top: none;
+  }
+
+  .napravlenie-nomer {
+    color: var(--accent);
+    font-size: 13px;
+  }
+
+  .rabotyi-list {
+    margin: 12px 0 0;
+    padding-left: 16px;
+    color: var(--ink-2);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .rabotyi-list li {
+    margin-bottom: 4px;
+  }
+</style>

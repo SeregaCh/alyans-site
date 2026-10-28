@@ -1,0 +1,111 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const rekvizityEntry = await getEntry('rekvizity', 'rekvizity');
+if (!rekvizityEntry) {
+  throw new Error('Запись реквизитов не найдена');
+}
+const r = rekvizityEntry.data;
+---
+
+<BaseLayout
+  title="Контакты — ООО «Альянс»"
+  description="Телефон, почта и полные реквизиты юридического лица ООО «Альянс» для проверки контрагента."
+>
+  <div class="container section">
+    <h1 class="h1-inner">Контакты</h1>
+
+    <div class="kontakty-grid">
+      <div>
+        <p class="overline">Связь</p>
+        <p style="margin-top: 10px;">
+          <a href={`tel:${r.telefon.replace(/[^0-9+]/g, '')}`} class="text-link mono">{r.telefon}</a>
+        </p>
+        <p style="margin-top: 6px;">
+          <a href={`mailto:${r.pochta}`} class="text-link mono">{r.pochta}</a>
+        </p>
+        <p style="margin-top: 12px;">Россия</p>
+      </div>
+
+      <div>
+        <p class="overline">Реквизиты</p>
+        <dl class="rekvizity-list">
+          <div>
+            <dt>Полное наименование</dt>
+            <dd>{r.naimenovaniePolnoe}</dd>
+          </div>
+          <div>
+            <dt>Краткое наименование</dt>
+            <dd>{r.naimenovanieKratkoe}</dd>
+          </div>
+          <div>
+            <dt>ИНН</dt>
+            <dd class="mono">{r.inn}</dd>
+          </div>
+          <div>
+            <dt>КПП</dt>
+            <dd class="mono">{r.kpp}</dd>
+          </div>
+          <div>
+            <dt>ОГРН</dt>
+            <dd class="mono">{r.ogrn}</dd>
+          </div>
+          <div>
+            <dt>ОКПО</dt>
+            <dd class="mono">{r.okpo}</dd>
+          </div>
+          <div>
+            <dt>ОКВЭД</dt>
+            <dd>{r.okved}</dd>
+          </div>
+          <div>
+            <dt>Юридический адрес</dt>
+            <dd>{r.yuridicheskiyAdres}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .kontakty-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 767px) {
+    .kontakty-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  .rekvizity-list {
+    margin: 10px 0 0;
+  }
+
+  .rekvizity-list > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 8px 0;
+    border-top: 1px solid var(--line-2);
+  }
+
+  .rekvizity-list > div:first-child {
+    border-top: none;
+  }
+
+  .rekvizity-list dt {
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  .rekvizity-list dd {
+    margin: 2px 0 0;
+    font-size: 14px;
+  }
+</style>

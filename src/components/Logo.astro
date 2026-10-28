@@ -1,0 +1,37 @@
+---
+// DESIGN.md §11: начертание — шесть литер кириллицы, гротеск без засечек,
+// вес ≈700, разрядка ≈0,30 em, currentColor. Растра бланка для наложения
+// не было — вместо хендрафченных контуров использован системный гротеск
+// нужного веса внутри inline SVG (не <img>, currentColor работает).
+// Проверка наложением на бланк не проводилась — см. отчёт реза 3.
+interface Props {
+  capHeight?: number;
+}
+const { capHeight = 19 } = Astro.props;
+---
+
+<svg
+  class="logo"
+  viewBox="0 0 216 40"
+  style={`height: ${capHeight}px`}
+  role="img"
+  aria-label="Альянс"
+>
+  <text x="0" y="30" class="logo-text">АЛЬЯНС</text>
+</svg>
+
+<style>
+  .logo {
+    display: block;
+    width: auto;
+    overflow: visible;
+    fill: currentColor;
+  }
+
+  .logo-text {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: 0.3em;
+  }
+</style>

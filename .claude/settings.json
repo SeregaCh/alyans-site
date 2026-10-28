@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": false,
+  "permissions": {
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(apt *)",
+      "Bash(apt-get *)",
+      "Bash(dpkg *)",
+      "Bash(snap *)",
+      "Bash(yum *)",
+      "Bash(dnf *)",
+      "Bash(/usr/bin/apt*)",
+      "Bash(/usr/bin/apt-get*)",
+      "Bash(/usr/bin/dpkg*)",
+      "Bash(sh -c *)",
+      "Bash(bash -c *)",
+      "Bash(eval *)",
+      "Bash(env * apt*)",
+      "Bash(systemctl restart nginx*)",
+      "Bash(service nginx restart*)",
+      "Bash(nginx -s stop)",
+      "Bash(systemctl stop nginx*)",
+      "Bash(ssh-keygen *)",
+      "Bash(ssh-add *)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Edit(//var/www/easy-plan/**)",
+      "Edit(~/.ssh/**)"
+    ],
+    "ask": [
+      "Bash(nginx *)",
+      "Bash(systemctl reload nginx*)",
+      "Bash(certbot *)",
+      "Bash(rm *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(npm install *)",
+      "Bash(npm install -g *)",
+      "Bash(npx * install*)",
+      "Bash(npx playwright install*)",
+      "Bash(npm run manual:scroll-360)",
+      "Edit(/etc/nginx/**)"
+    ],
+    "allow": [
+      "Bash(npm ci)",
+      "Bash(npm run build)",
+      "Bash(npm run test)",
+      "Bash(npx astro build)",
+      "Bash(npx astro check)",
+      "Bash(npx eslint .)",
+      "Bash(npx vitest run)",
+      "Bash(nginx -t)",
+      "Bash(dig *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git pull)"
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const dopuski = await getCollection('dopuski');
+
+const TIP_NAZVANIE: Record<string, string> = {
+  'sro-stroitelstvo': 'СРО, строительство',
+  'sro-proektirovanie': 'СРО, проектирование',
+  litsenziya: 'Лицензия МЧС на монтаж и обслуживание средств обеспечения пожарной безопасности',
+  strakhovanie: 'Страхование ответственности',
+};
+
+const TIP_PORYADOK = ['sro-stroitelstvo', 'sro-proektirovanie', 'litsenziya', 'strakhovanie'];
+
+const sorted = [...dopuski].sort((a, b) => TIP_PORYADOK.indexOf(a.data.tip) - TIP_PORYADOK.indexOf(b.data.tip));
+const sNomerom = sorted.filter((d) => d.data.tip !== 'strakhovanie');
+const strakhovka = sorted.find((d) => d.data.tip === 'strakhovanie');
+---
+
+<BaseLayout
+  title="Допуски — ООО «Альянс»"
+  description="Реестровые номера СРО и лицензии МЧС ООО «Альянс» со ссылками на проверку в государственных реестрах."
+>
+  <div class="container section">
+    <h1 class="h1-inner">Допуски</h1>
+    <p class="lead" style="margin-top: 12px;">
+      Номера ниже проверяются в государственных реестрах. Сканы выписок не публикуются: выписка
+      действительна 30 дней и устаревает.
+    </p>
+
+    <table class="data-table" style="margin-top: 20px;">
+      <thead>
+        <tr>
+          <th scope="col">Допуск</th>
+          <th scope="col">Кем выдан</th>
+          <th scope="col">Реестровый номер</th>
+          <th scope="col">Дата</th>
+          <th scope="col">Проверка</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          sNomerom.map((d) => (
+            <tr>
+              <td data-label="Допуск">{TIP_NAZVANIE[d.data.tip]}</td>
+              <td data-label="Кем выдан">{d.data.kemVydan}</td>
+              <td data-label="Реестровый номер" class="col-nomer">
+                {d.data.reestrovyiNomer}
+                {d.data.regionalnyiNomer && (
+                  <div class="caption mono" style="color: var(--ink-3); margin-top: 4px;">
+                    региональный: {d.data.regionalnyiNomer}
+                  </div>
+                )}
+              </td>
+              <td data-label="Дата" class="col-god">{d.data.data}</td>
+              <td data-label="Проверка">
+                <a
+                  href={d.data.urlReestra}
+                  class="text-link registry-link"
+                  rel="noopener"
+                  target="_blank"
+                  aria-label="Проверить в реестре, откроется в новой вкладке"
+                >
+                  Проверить в реестре
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    {
+      strakhovka && (
+        <p class="caption" style="color: var(--ink-2); margin-top: 16px;">
+          Ответственность застрахована ({strakhovka.data.kemVydan}).
+        </p>
+      )
+    }
+  </div>
+</BaseLayout>

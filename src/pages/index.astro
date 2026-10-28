@@ -1,0 +1,210 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import { NAPRAVLENIYA_IDS } from '../content/shared';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const napravleniyaAll = await getCollection('napravleniya');
+const napravleniyaById = new Map(napravleniyaAll.map((n) => [n.id, n]));
+const napravleniya = NAPRAVLENIYA_IDS.map((id) => napravleniyaById.get(id)).filter(
+  Boolean,
+) as typeof napravleniyaAll;
+
+const obekty = await getCollection('obekty');
+const dopuski = await getCollection('dopuski');
+const rekvizityEntry = await getEntry('rekvizity', 'rekvizity');
+if (!rekvizityEntry) {
+  throw new Error('Запись реквизитов не найдена');
+}
+const r = rekvizityEntry.data;
+
+const posledniyeTri = [...obekty]
+  .sort((a, b) => b.data.godSortirovki - a.data.godSortirovki)
+  .slice(0, 3);
+
+const dopuskiSNomerom = dopuski.filter((d) => d.data.tip !== 'strakhovanie');
+const strakhovka = dopuski.find((d) => d.data.tip === 'strakhovanie');
+const sroCount = dopuski.filter((d) => d.data.tip.startsWith('sro-')).length;
+const litsenziyaCount = dopuski.filter((d) => d.data.tip === 'litsenziya').length;
+
+const TIP_NAZVANIE: Record<string, string> = {
+  'sro-stroitelstvo': 'СРО, строительство',
+  'sro-proektirovanie': 'СРО, проектирование',
+  litsenziya: 'Лицензия МЧС',
+};
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: r.naimenovanieKratkoe,
+  legalName: r.naimenovaniePolnoe,
+  taxID: r.inn,
+  identifier: [{ '@type': 'PropertyValue', name: 'ОГРН', value: r.ogrn }],
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: r.yuridicheskiyAdres,
+    addressCountry: 'RU',
+  },
+  telephone: r.telefon,
+  email: r.pochta,
+  url: Astro.site?.href,
+};
+---
+
+<BaseLayout
+  title="ООО «Альянс» — инженерные сети, аэронавигация, покрытия, монолитные работы"
+  description="Подрядчик по инженерным сетям, объектам аэронавигации, антикоррозионным покрытиям и монолитным работам. Допуски СРО, лицензия МЧС, более 50 выполненных объектов за последние три года."
+  jsonLd={organizationJsonLd}
+>
+  <!-- ① Кто мы и что делаем -->
+  <div class="container section hero">
+    <p class="overline mono">ООО «АЛЬЯНС» · ПОДРЯДНЫЕ РАБОТЫ С 2010 ГОДА</p>
+    <h1 class="h1-hero" style="margin-top: 10px;">
+      Четыре направления работ по России
+    </h1>
+
+    <div class="napravleniya-grid" style="margin-top: 24px;">
+      {
+        napravleniya.map((n) => (
+          <a href="/napravleniya/" class="napravlenie-card">
+            <h3>{n.data.nazvanie}</h3>
+            <p class="card-rabotyi">{n.data.opisanie}</p>
+          </a>
+        ))
+      }
+    </div>
+
+    <div class="facts-row">
+      <div>
+        <div class="fact-number mono">2010</div>
+        <div class="caption" style="color: var(--ink-3);">год</div>
+      </div>
+      <div>
+        <div class="fact-number mono">{sroCount}</div>
+        <div class="caption" style="color: var(--ink-3);">в СРО</div>
+      </div>
+      <div>
+        <div class="fact-number mono">{litsenziyaCount}</div>
+        <div class="caption" style="color: var(--ink-3);">лицензия МЧС</div>
+      </div>
+      <div>
+        <div class="fact-number mono">более 50</div>
+        <div class="caption" style="color: var(--ink-3);">объектов за 3 года</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Где работали -->
+  <div class="container section">
+    <div class="section-heading">
+      <h2>Где работали</h2>
+      <a href="/obekty/" class="text-link">Все объекты</a>
+    </div>
+
+    <table class="data-table" style="margin-top: 16px;">
+      <tbody>
+        {
+          posledniyeTri.map((o) => (
+            <tr>
+              <td data-label="Объект" class="col-naimenovanie">
+                {o.data.naimenovanie}
+                {o.data.vSostaveGruppyKompaniy && (
+                  <div class="caption" style="color: var(--ink-3); margin-top: 4px;">
+                    в составе группы компаний
+                  </div>
+                )}
+              </td>
+              <td data-label="Заказчик">{o.data.zakazchik.join('; ')}</td>
+              <td data-label="Год" class="col-god" style="text-align: right;">{o.data.god}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ③ Допуски и лицензия -->
+  <div class="container section">
+    <div class="section-heading">
+      <h2>Допуски и лицензия</h2>
+      <a href="/dopuski/" class="text-link">Допуски →</a>
+    </div>
+
+    <div class="dopuski-grid" style="margin-top: 16px;">
+      {
+        dopuskiSNomerom.map((d) => (
+          <div class="dopusk-plashka">
+            <div style="font-size: 15px; font-weight: 600;">{TIP_NAZVANIE[d.data.tip]}</div>
+            <div class="mono" style="font-size: 13px; color: var(--ink-3); margin-top: 6px;">
+              № {d.data.reestrovyiNomer} · {d.data.data}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    {
+      strakhovka && (
+        <p class="caption" style="color: var(--ink-2); margin-top: 14px;">
+          Ответственность застрахована.
+        </p>
+      )
+    }
+  </div>
+
+  <!-- ④ Как связаться -->
+  <div class="container section">
+    <h2>Как связаться</h2>
+    <div style="margin-top: 16px;">
+      <p><a href={`tel:${r.telefon.replace(/[^0-9+]/g, '')}`} class="text-link mono">{r.telefon}</a></p>
+      <p style="margin-top: 6px;"><a href={`mailto:${r.pochta}`} class="text-link mono">{r.pochta}</a></p>
+      <p style="margin-top: 10px;">Россия</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .napravleniya-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+
+  .facts-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 479px) {
+    .facts-row {
+      justify-content: space-between;
+      gap: 12px;
+    }
+  }
+
+  .fact-number {
+    font-size: 28px;
+  }
+
+  @media (max-width: 640px) {
+    .fact-number {
+      font-size: 22px;
+    }
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dopuski-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+</style>
