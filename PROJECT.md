@@ -19,8 +19,9 @@
 ## Машина разработки
 
 - Сервер Пульта, IP 212.108.82.87. Разработка переехала сюда с 45.90.32.35.
-- Claude Code — пользователь `alyans` без sudo, сессия `alyans`, рабочая копия `~/alyans-site-new`.
-- Зона: сборка, проверка на `127.0.0.1:4321`, коммит и push в GitHub. Наружу ничего не публикуется — ни домена, ни vhost, ни порта.
+- Claude Code — пользователь `alyans` без sudo, сессия `alyans`, рабочая копия `~/alyans-site`.
+- Зона: сборка, проверка на `127.0.0.1:4321`, коммит и push в GitHub, выкладка staging командой `deploy:staging`. Наружу ничего не публикуется — ни домена, ни vhost, ни порта.
+- Здесь же живёт staging `dev.alyans-em.ru` (см. «Окружения»): каталог `/var/www/alyans-staging`, vhost и сертификат ставит автор.
 - Каталоги Пульта закрыты и к проекту отношения не имеют.
 - Доступа к проду 45.90.32.35 отсюда нет: выкладка — рукой автора.
 
@@ -34,38 +35,38 @@
 
 ## Прод (45.90.32.35)
 
-Здесь живут production и staging. Ходит туда **только автор**; у Claude Code доступа нет. Всё ниже — справка и правила для автора, делающего выкладку.
+Здесь живёт production; старого staging здесь нет с 2026-10-28. Ходит туда **только автор**; у Claude Code доступа нет. Всё ниже — справка и правила для автора, делающего выкладку.
 
 ### Сервер
 
 - VPS, IP — 45.90.32.35. Прежний сосед EasyPlan снят 2026-10-14 (см. ниже).
 - Ubuntu 24.04.4 LTS, ядро 6.8. 2 ядра, 4 ГБ памяти, 40 ГБ диска; свободно 31 ГБ (после перезагрузки сервера, на 2026-09-14).
-- Каталоги проекта: `/var/www/alyans/prod` (релизы production, см. «Окружения») и `/var/www/alyans/staging` (рабочая копия git staging; раздаётся подкаталог сборки).
-- До переезда разработки здесь работала сессия tmux `alyans` в `/var/www/alyans/staging`; для разработки машина больше не используется. Сессия `work` осталась от EasyPlan и к этому проекту отношения не имеет.
+- Каталог проекта: `/var/www/alyans/prod` (релизы production, см. «Окружения»). Каталоги старого staging (`staging`, `staging-dist`), vhost `alyans-dev` и его сертификат сняты 2026-10-28 (`log/2026-10-28-pereezd-staging.md`).
+- Старой разработки и Claude Code здесь нет: сессия `alyans`, `/root/.claude`, бинарник Claude, Playwright-кэш, `prod-dist` и ключ `alyans-write` сняты 2026-10-28 (`log/2026-10-28-pervyy-vypusk-q7.md`).
 
 ### Соседи по машине
 
 - **EasyPlan снят 2026-10-14.** От него — статическая заглушка nginx `easy-plan.ru` (`/var/www/easy-plan-stub`, ответ «Site closed.»); процессов PM2 нет, системный `/usr/bin/node` никто не обслуживает.
 - **Наблюдатель Пульта** `watch.serega-hub.ru` — на этой же машине, за общим nginx. После любого `reload` nginx — проверка: `watch.serega-hub.ru` отвечает `401`.
 - Общие ресурсы: nginx, certbot, порты 80 и 443, пользователь www-data. Правки nginx — только своим файлом в `sites-available`; чужие vhost не читаются на правку и не изменяются. Сначала `nginx -t`, затем `reload`, никогда `restart`.
-- **`default_server` явно ни за кем не закреплён.** Отсюда порядок развёртывания нового домена: A-запись → сразу vhost с явным `server_name` → certbot. Домен не оставляется без своего vhost.
+- **`default_server` держит сток `00-default-drop`** (с 2026-10-28): 80 и `[::]:80` — `return 444`, 443 и `[::]:443` — `ssl_reject_handshake`. Незаданный Host не попадает ни в один сайт. Порядок развёртывания нового домена прежний: A-запись → сразу vhost с явным `server_name` → certbot.
 - Выпуск сертификата certbot — рисковая команда. Откат nginx: восстановить прежний файл vhost, `nginx -t`, `reload`, проверить `easy-plan.ru` → `200` (заглушка) и `watch.serega-hub.ru` → `401`.
 - Статике не нужны порт, рантайм и процесс-менеджер: nginx отдаёт каталог файлов.
 
 ### Окружения
 
-- **production** — https://alyans-em.ru. Выпуск — слияние PR main → prod в GitHub (ruleset: только PR, проверка `build`). На сервере таймер `alyans-release` (раз в 2 минуты) от пользователя `alyans-deploy` собирает новый `prod` в `/var/www/alyans/prod/releases/<sha>` и переключает симлинк `/var/www/alyans/prod/current`; nginx раздаёт `current`. Выпущенный хеш — `https://alyans-em.ru/version.txt`. Хранятся 5 последних релизов; откат — `rollback.sh`. Установка и откат — `docs/runbooks/`. Секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
-- **staging** — `dev.alyans-em.ru`: рабочая копия `/var/www/alyans/staging`, закрыт от индексации.
-- Оба — статика через nginx, своим vhost и своим сертификатом Let's Encrypt.
+- **production** — https://alyans-em.ru. Выпуск — слияние PR main → prod в GitHub (ruleset: только PR, проверка `build`). На сервере таймер `alyans-release` (раз в 2 минуты) от пользователя `alyans-deploy` собирает новый `prod` в `/var/www/alyans/prod/releases/<sha>` и переключает симлинк `/var/www/alyans/prod/current`; nginx раздаёт `current`. Выпущенный хеш — `https://alyans-em.ru/version.txt`. Хранятся 5 последних релизов; откат — `rollback.sh`. Сборка — на Node 22.23.4 из `/opt/node22`, только для службы выкладки (`PATH` в юните); системный Node 20 не используется. Установка и откат — `docs/runbooks/`. Секретов нет. `www.alyans-em.ru` в сертификате, отдаёт 301 на основной домен с сохранением пути — не второй сайт.
+- **staging** — https://dev.alyans-em.ru на **сервере Пульта 212.108.82.87**, не здесь: каталог `/var/www/alyans-staging` (`alyans:alyans`, 755), выкладка — `npm run deploy:staging` исполнителем. Закрыт от индексации заголовком `X-Robots-Tag` и `robots.txt`. Vhost из репозитория (`deploy/nginx/dev.alyans-em.ru.conf`), сертификат certbot на сервере Пульта; A-запись `dev` → `212.108.82.87`.
+- Оба — статика через nginx, своим vhost и своим сертификатом Let's Encrypt, на разных машинах.
 
 ### Веб и деплой
 
 - Nginx 1.24 (Ubuntu), certbot 2.9.0 из apt с плагином nginx, автообновление таймером `certbot.timer`.
-- Staging: `git pull` → `npm ci` → сборка Astro → готовый каталог раздаётся nginx. Рестарта процессов нет — обновляются файлы. Production — см. «Окружения».
-- Команды окружений (в `package.json`): `build:staging` собирает с `SITE_ENV=staging` (индексация закрыта, домен `dev.alyans-em.ru`); `build:production` — с `SITE_ENV=production` (домен `alyans-em.ru`, `robots.txt` открыт); `deploy:staging` собирает `build:staging` и синхронизирует `dist/` в `/var/www/alyans/staging-dist/` (корень vhost `alyans-dev`).
+- Staging: на сервере Пульта `npm ci` → `deploy:staging` (сборка с `SITE_ENV=staging` и `rsync -rlpt --delete` в `/var/www/alyans-staging/` под `alyans`). Рестарта процессов нет — обновляются файлы. Production — см. «Окружения».
+- Команды окружений (в `package.json`): `build:staging` собирает с `SITE_ENV=staging` (индексация закрыта, домен `dev.alyans-em.ru`); `build:production` — с `SITE_ENV=production` (домен `alyans-em.ru`, `robots.txt` открыт); `deploy:staging` собирает staging-сборку и синхронизирует `dist/` в `/var/www/alyans-staging/`.
 - **Деплой на dev — только командой `deploy:staging`.** Вручную `rsync` не запускается: команда уже включает нужную сборку и правильный `SITE_ENV`, ручной вызов рискует раздать staging-сборку с production-конфигурацией или наоборот.
 - Promote → production: слияние PR main → prod; таймер выкладывает его сам.
-- Порядок обновления staging после переезда разработки — открытый долг, см. `ROADMAP.md`.
+- Проверка после выкладки staging: `curl -sSI --resolve dev.alyans-em.ru:443:127.0.0.1 https://dev.alyans-em.ru/` → `200` и `X-Robots-Tag: noindex, nofollow`.
 
 ## Домен и DNS
 
