@@ -1,0 +1,49 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # Имя `build` — обязательная проверка в ruleset ветки prod; не переименовывать.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          SITE_ENV: production
+      - run: npm test
+
+  open-pr:
+    name: open-pr
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      # contents: read — для сравнения веток через API; права задачи заменяют права workflow.
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Открыть PR main → prod, если его нет
+        run: |
+          open=$(gh pr list --repo "$REPO" --base prod --head main --state open --json number --jq 'length')
+          if [ "$open" != "0" ]; then
+            echo "PR main → prod уже открыт — обновится сам."
+            exit 0
+          fi
+          gh api "repos/$REPO/compare/prod...main" \
+            --jq '.commits[] | "- " + .sha[0:7] + " " + (.commit.message | split("\n")[0])' > body.md
+          gh pr create --repo "$REPO" --base prod --head main \
+            --title "Выпуск: main → prod" --body-file body.md
