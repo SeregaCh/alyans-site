@@ -50,11 +50,12 @@ mv ~/alyans-site-archive-clone ~/alyans-site
 
 Проверка перед правкой:
 ```
-command -v rsync || echo "rsync нет"
+sudo apt-get install -y rsync
+command -v rsync
 ls -l /etc/nginx/sites-enabled/
 curl -sS -H "Host: nope.invalid" http://127.0.0.1/
 ```
-**Ожидается:** `rsync` найден (если `rsync нет` — установить `sudo apt-get install -y rsync` с согласия Ревизора Пульта: без него шаг 3 упадёт); файла `dev.alyans-em.ru` в `sites-enabled` нет; запрос с чужим Host — `Empty reply from server` (сток Пульта на месте).
+**Ожидается:** `rsync` установлен, `command -v rsync` печатает путь (без него шаг 3 упадёт); файла `dev.alyans-em.ru` в `sites-enabled` нет; запрос с чужим Host — `Empty reply from server` (сток Пульта на месте).
 
 Правка:
 ```
@@ -126,7 +127,7 @@ getent hosts dev.alyans-em.ru
 
 ```
 sudo cp -p /etc/nginx/sites-available/dev.alyans-em.ru /root/dev.alyans-em.ru.before-certbot
-sudo certbot --nginx -d dev.alyans-em.ru
+sudo certbot --nginx --redirect -d dev.alyans-em.ru
 sudo nginx -t
 curl -sSI https://dev.alyans-em.ru/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' http://dev.alyans-em.ru/
@@ -161,8 +162,9 @@ ls -l /etc/nginx/sites-enabled/
 grep -rn default_server /etc/nginx/sites-enabled/
 curl -fsS --resolve alyans-em.ru:443:127.0.0.1 https://alyans-em.ru/version.txt
 cat /var/lib/alyans-deploy/state/current-sha
+sudo ss -tlnp | grep nginx
 ```
-**Ожидается:** в `sites-enabled` есть `alyans-dev`; `default_server` встречается только в `alyans-dev`; `version.txt` равен `current-sha`. Иначе — стоп.
+**Ожидается:** в `sites-enabled` есть `alyans-dev`; `default_server` встречается только в `alyans-dev`; `version.txt` равен `current-sha`; nginx слушает только `0.0.0.0:80` и `0.0.0.0:443`. Иначе — стоп. Если в выводе `ss` есть `[::]:80` или `[::]:443` — стоп, вывод Ревизору: тогда сток получит строки `[::]`.
 
 Файл стока:
 ```
