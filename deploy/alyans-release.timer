@@ -1,0 +1,10 @@
+[Unit]
+Description=Проверка ветки prod и выкладка alyans-em.ru каждые 2 минуты
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=alyans-release.service
+
+[Install]
+WantedBy=timers.target

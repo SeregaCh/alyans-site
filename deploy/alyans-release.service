@@ -1,0 +1,15 @@
+[Unit]
+Description=Выкладка alyans-em.ru с ветки prod
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+TimeoutStartSec=20min
+User=alyans-deploy
+Group=alyans-deploy
+ExecStart=/usr/local/lib/alyans-deploy/release.sh
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/alyans-deploy /var/www/alyans/prod
