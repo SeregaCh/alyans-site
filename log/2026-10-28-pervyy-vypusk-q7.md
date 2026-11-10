@@ -40,3 +40,15 @@
 ## Итог
 
 Прод выпускается слиянием PR main → prod, без ручного входа на сервер. Откат — `rollback.sh`. Дальше — Node 22 для выкладки и снятие старой разработки с 45.90.32.35 по второму runbook.
+
+## Вторая часть: Node 22 и снятие старой разработки
+
+Выполнено автором по `docs/runbooks/prod-node22-i-uborka.md` целиком. Как и выше, итоги записаны со слов автора и Ревизора Пульта, без выводов команд.
+
+- **Шаг А.** `pm2` без процессов. Архив `node-v22.23.4-linux-x64.tar.xz` сверен по `SHASUMS256.txt` — OK. От `alyans-deploy` — `v22.23.4`, npm `10.9.9`; `/usr/bin/node` — `v20.20.2`, не тронут; `easy-plan.ru` — 200.
+- **Шаг Б.** Установка из `9e56c11`; `systemd-analyze verify` без ошибок; `PATH` службы на `/opt/node22`; `cd /` в скрипте; таймер на месте.
+- **Второй выпуск.** PR #2 слит автором; `prod` = `3be222d3719d4030b19fde4dac1d200e2e330d69`; `version.txt` и `current-sha` совпали; `EBADENGINE` — 0.
+- **Шаг В.1.** tmux-сессий и процессов `claude` под root нет; порт 4321 свободен; `prod-dist` в `sites-enabled` не встречается; `/root/.ssh/config` нет. В.2 не понадобился.
+- **Шаги В.3–В.4.** Удалено 7 путей из 7: `/root/.claude`, `/root/.local/share/claude`, `/root/.local/bin/claude`, `/root/.cache/ms-playwright`, `/var/www/alyans/prod-dist`, оба файла `id_ed25519_alyans-write`. После: `version.txt` = `current-sha` = `3be222d`; `easy-plan.ru` — 200, `dev.alyans-em.ru` — 200, `watch.serega-hub.ru` — 401, `alyans-em.ru` — 200.
+
+Итог второй части: выпуски идут на Node 22 без `EBADENGINE`; на 45.90.32.35 нет ни старой разработки, ни Claude Code.

@@ -11,7 +11,7 @@
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && astro build",
     "build:staging": "SITE_ENV=staging npm run build",
     "build:production": "SITE_ENV=production npm run build",
-    "deploy:staging": "npm run build:staging && rsync -a --delete dist/ /var/www/alyans/staging-dist/",
+    "deploy:staging": "SITE_ENV=staging npm run build && rsync -rlpt --delete --chmod=D755,F644 dist/ /var/www/alyans-staging/",
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
