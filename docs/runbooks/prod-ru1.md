@@ -297,9 +297,8 @@ sleep 2
 - **Вторые A-записи не добавлять** — две записи будут раздаваться по очереди.
 - MX, TXT, CNAME `mail`, A `dev` — не трогать. NS у Beget не трогать — уронит почту.
 
-Проверка на prod-ru1:
+Проверка на prod-ru1 (`systemd-resolved` здесь нет — сброс кэша не нужен, `getent` спрашивает DNS напрямую):
 ```
-sudo resolvectl flush-caches
 getent hosts alyans-em.ru
 getent hosts www.alyans-em.ru
 ```
@@ -359,7 +358,7 @@ systemctl list-timers --all | grep -i alyans
 ```
 Через 2–3 минуты:
 ```
-journalctl -u alyans-release -n 20 --no-pager
+sudo journalctl -u alyans-release -n 20 --no-pager
 ```
 
 **Ожидается:** таймер `alyans-release.timer` в списке, следующий запуск в пределах 2 минут; в журнале — `alyans-release: prod не изменился (…) — выход`, в скобках хеш prod из шага 5.
@@ -375,13 +374,13 @@ journalctl -u alyans-release -n 20 --no-pager
 Автор сливает открытый PR main → prod (в нём документы). Через 2–4 минуты:
 ```
 curl -fsS https://alyans-em.ru/version.txt
-journalctl -u alyans-release -n 5 --no-pager
+sudo journalctl -u alyans-release -n 5 --no-pager
 sudo cat /var/lib/alyans-deploy/state/current-sha
 ```
 
 **Ожидается:** `version.txt` равен новому хешу `prod` в GitHub (merge-коммит PR); последняя строка журнала — `alyans-release: готово: ` и тот же новый хеш; `current-sha` — тот же хеш.
 
-С этого момента выкладка — слияние PR main → prod в GitHub; журнал — `journalctl -u alyans-release`.
+С этого момента выкладка — слияние PR main → prod в GitHub; журнал — `sudo journalctl -u alyans-release`.
 
 **Откат:** аварийный откат ниже — на предыдущий релиз.
 
@@ -393,7 +392,7 @@ sudo cat /var/lib/alyans-deploy/state/current-sha
 
 **Как увидеть:**
 ```
-journalctl -u alyans-release -n 30 --no-pager
+sudo journalctl -u alyans-release -n 30 --no-pager
 ```
 В журнале на каждом запуске — строка `alyans-release: … уже проваливался — ждём новый коммит в prod`; выше по журналу — причина провала (строки `ОШИБКА`).
 
@@ -401,7 +400,7 @@ journalctl -u alyans-release -n 30 --no-pager
 ```
 sudo -u alyans-deploy -H rm /var/lib/alyans-deploy/state/failed-sha
 ```
-Следующий запуск таймера (до 2 минут) соберёт хеш заново; итог — в `journalctl -u alyans-release`.
+Следующий запуск таймера (до 2 минут) соберёт хеш заново; итог — в `sudo journalctl -u alyans-release`.
 
 Если причина в самом коммите — `failed-sha` не трогать: исправление идёт через `main` → PR → `prod`.
 
@@ -421,6 +420,6 @@ sudo -u alyans-deploy -H /usr/local/lib/alyans-deploy/rollback.sh 3be222d3719d40
 **Что увидеть после:**
 - последняя строка — `alyans-rollback: аварийный откат на … — version.txt совпал`, на месте `…` хеш релиза;
 - `curl -fsS --resolve alyans-em.ru:443:127.0.0.1 https://alyans-em.ru/version.txt` — тот же хеш;
-- `journalctl -t alyans-release -n 5 --no-pager` — строка `аварийный откат на` с тем же хешем.
+- `sudo journalctl -t alyans-release -n 5 --no-pager` — строка `аварийный откат на` с тем же хешем.
 
 `current-sha` откат не меняет, поэтому таймер откатанный релиз не вернёт: он ждёт новый коммит в `prod`. Следующее слияние в `prod` выложится как обычно — исправление идёт через `main` → PR → `prod`.
