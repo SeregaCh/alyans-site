@@ -14,7 +14,7 @@
 - Архив: `SeregaCh/alyans-site-archive` — приватный, полная история до переноса. Из него не работают и не выкладывают.
 - Доступ с каждой машины — отдельным deploy-ключом узкого scope (ключи других репозиториев не переиспользуются).
 - Машина разработки: ключ `~/.ssh/id_ed25519_alyans-site-v2`, закреплён в `core.sshCommand` рабочей копии (`ssh -i ~/.ssh/id_ed25519_alyans-site-v2 -o IdentitiesOnly=yes`).
-- Прод 45.90.32.35: ключ «alyans server write» — с правом записи (см. долги в `ROADMAP.md`).
+- Прод prod-ru1: ключ `id_ed25519_alyans-site-ro` пользователя `alyans-deploy` — только чтение (`SHA256:83RArODYOBcREzReA4cO0JseG6gyxUgzUBhGWWbTOyw`).
 
 ## Машина разработки
 
@@ -35,7 +35,7 @@
 
 ## Прод (prod-ru1, 137.22.148.13)
 
-**45.90.32.35 уничтожен 2026-11-02** вместе с облаком Beget — машины нет. Прод восстанавливается на prod-ru1 по `docs/runbooks/prod-ru1.md`; восстановление = прогон этого runbook-а из GitHub (см. `DECISIONS.md`). Runbook-и `prod-ustanovka.md` и `prod-node22-i-uborka.md` — исторические, для 45.90.32.35.
+**Прод восстановлен 2026-11-10 на prod-ru1** по `docs/runbooks/prod-ru1.md` (`log/2026-11-10-vosstanovlenie-proda-prod-ru1.md`). Текущий `prod` — `8e142bb`; сертификат `alyans-em.ru` + `www.alyans-em.ru` до 2027-02-08. Прежний сервер 45.90.32.35 уничтожен 2026-11-02 вместе с облаком Beget; восстановление = прогон runbook-а из GitHub (см. `DECISIONS.md`). Runbook-и `prod-ustanovka.md` и `prod-node22-i-uborka.md` — исторические, для 45.90.32.35.
 
 Ходит на prod-ru1 **только автор**; у Claude Code доступа нет. Всё ниже — справка и правила для автора, делающего выкладку.
 
@@ -48,7 +48,9 @@
 
 ### Соседи по машине
 
-- **Сайт `watch.serega-hub.ru`** (nginx) и **контейнер Gatus `pult-observer`** на `127.0.0.1:8080` — не трогать. После любого `reload` nginx — сверка соседей по эталону шага 1 runbook-а: `watch.serega-hub.ru` → `401`, `127.0.0.1:8080` → `200`, неизвестный Host на 80 — `Empty reply`, неизвестный SNI на 443 — отказ рукопожатия.
+- **Сайт `watch.serega-hub.ru`** (nginx) и **контейнер Gatus `pult-observer`** на `127.0.0.1:8080` — не трогать. В `/opt` — скрипты хостера `disk.sh`, `scan.sh`, не наши.
+- **Эталон соседей** (шаг 1 runbook-а, 2026-11-10) — сверка после любого `reload` nginx: `watch.serega-hub.ru` → `401`; `127.0.0.1:8080` → `200`; неизвестный Host на 80 — `curl: (52) Empty reply from server`; неизвестный SNI на 443 — `curl: (35) … unrecognized name`.
+- Журнал выкладки — `sudo journalctl -u alyans-release`: под `serega` без `sudo` он пуст. `systemd-resolved` нет — `resolvectl` не работает, `getent` обходится без сброса кэша.
 - Общие ресурсы: nginx, certbot, порты 80 и 443, пользователь www-data. Правки nginx — только своим файлом в `sites-available`; чужие vhost не читаются на правку и не изменяются. Сначала `nginx -t`, затем `reload`, никогда `restart`.
 - **Группа `docker` на этой машине равна root.** `alyans-deploy` не входит ни в `docker`, ни в `sudo`, ни в `adm`.
 - **`default_server` держит сток `00-default-drop`:** неизвестный Host — `444`, неизвестный SNI — отказ рукопожатия. Порядок развёртывания домена: vhost с явным `server_name` → A-запись → certbot.
